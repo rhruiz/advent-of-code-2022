@@ -15,12 +15,8 @@ defmodule D02E1 do
   @lost 0
 
   def score(a, a), do: @draw
-  def score(1, 3), do: @won
-  def score(1, 2), do: @lost
-  def score(2, 1), do: @won
-  def score(2, 3), do: @lost
-  def score(3, 1), do: @lost
-  def score(3, 2), do: @won
+  def score(a, b) when a - b in [-2, 1], do: @won
+  def score(a, b) when a - b in [2, -1], do: @lost
 end
 
 IO.stream(:stdio, :line)

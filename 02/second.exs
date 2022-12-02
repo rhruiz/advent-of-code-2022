@@ -7,31 +7,17 @@ defmodule D02E2 do
     score(me, other) + me
   end
 
-  @rock 1
-  @paper 2
-  @scissors 3
-
   @won 6
   @draw 3
   @lost 0
 
   def my_play(a, @draw), do: a
-
-  def my_play(@rock, @won), do: @paper
-  def my_play(@paper, @won), do: @scissors
-  def my_play(@scissors, @won), do: @rock
-
-  def my_play(@rock, @lost), do: @scissors
-  def my_play(@paper, @lost), do: @rock
-  def my_play(@scissors, @lost), do: @paper
+  def my_play(a, @won), do: Integer.mod(a, 3) + 1
+  def my_play(a, @lost), do: Integer.mod(a - 2, 3) + 1
 
   def score(a, a), do: @draw
-  def score(@rock, @scissors), do: @won
-  def score(@rock, @paper), do: @lost
-  def score(@paper, @rock), do: @won
-  def score(@paper, @scissors), do: @lost
-  def score(@scissors, @rock), do: @lost
-  def score(@scissors, @paper), do: @won
+  def score(a, b) when a - b in [-2, 1], do: @won
+  def score(a, b) when a - b in [2, -1], do: @lost
 end
 
 IO.stream(:stdio, :line)
