@@ -67,12 +67,21 @@ defmodule Du do
   end
 end
 
-:stdio
-|> IO.stream(:line)
-|> Stream.map(&String.trim/1)
-|> Enum.reduce(Du.new(), &Du.handle/2)
-|> Du.usage()
-|> IO.inspect()
-|> Enum.filter(fn {_path, size} -> size <= 100000 end)
-|> Enum.reduce(0, fn {_path, size}, usage -> size + usage end)
+
+usage =
+  :stdio
+  |> IO.stream(:line)
+  |> Stream.map(&String.trim/1)
+  |> Enum.reduce(Du.new(), &Du.handle/2)
+  |> Du.usage()
+
+total_disk = 70000000
+used = usage["root"]
+available = total_disk - used
+required = 30000000 - available
+
+usage
+|> Enum.filter(fn {_dir, size} -> size >= required end)
+|> Enum.sort_by(fn {_dir, size} -> size end)
+|> hd()
 |> IO.inspect()
