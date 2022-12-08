@@ -1,19 +1,14 @@
-{grid, xmax, ymax} =
+Code.compile_file(Path.expand("../../lib/grid.ex", __ENV__.file))
+
+grid =
   :stdio
   |> IO.stream(:line)
-  |> Stream.map(&String.trim/1)
-  |> Stream.with_index()
-  |> Enum.reduce({%{}, 0, 0}, fn {line, y}, state ->
-    line
-    |> String.split("", trim: true)
-    |> Enum.with_index()
-    |> Enum.reduce(state, fn {height, x}, {grid, xmax, ymax} ->
-      {Map.put(grid, {x, y}, String.to_integer(height)), max(x, xmax), max(y, ymax)}
-    end)
-  end)
+  |> Grid.new()
 
-hidden = fn grid, x, y, xmax, ymax ->
+hidden = fn grid, x, y ->
   height = grid[{x, y}]
+  xmax = grid.xmax
+  ymax = grid.ymax
 
   lxs = for xx <- 0..x, {xx, y} != {x, y}, do: grid[{xx, y}]
   rxs = for xx <- x..xmax, {xx, y} != {x, y}, do: grid[{xx, y}]
@@ -26,12 +21,12 @@ hidden = fn grid, x, y, xmax, ymax ->
     Enum.any?(bys, &(&1 >= height))
 end
 
-for x <- 1..(xmax - 1),
-    y <- 1..(ymax - 1),
-    !hidden.(grid, x, y, xmax, ymax) do
-  {x, y}
+trees_on_the_borders = (grid.xmax + 1) * (grid.ymax + 1) - (grid.xmax - 1) * (grid.ymax - 1)
+
+for x <- 1..(grid.xmax - 1),
+    y <- 1..(grid.ymax - 1),
+    !hidden.(grid, x, y),
+    reduce: trees_on_the_borders do
+  count -> count + 1
 end
-|> Enum.reduce((xmax + 1) * (ymax + 1) - (xmax - 1) * (ymax - 1), fn _item, count ->
-  count + 1
-end)
 |> IO.inspect()

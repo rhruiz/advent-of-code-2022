@@ -1,18 +1,14 @@
-{grid, xmax, ymax} =
+Code.compile_file(Path.expand("../../lib/grid.ex", __ENV__.file))
+
+grid =
   :stdio
   |> IO.stream(:line)
-  |> Stream.map(&String.trim/1)
-  |> Stream.with_index()
-  |> Enum.reduce({%{}, 0, 0}, fn {line, y}, state ->
-    line
-    |> String.split("", trim: true)
-    |> Enum.with_index()
-    |> Enum.reduce(state, fn {height, x}, {grid, xmax, ymax} ->
-      {Map.put(grid, {x, y}, String.to_integer(height)), max(x, xmax), max(y, ymax)}
-    end)
-  end)
+  |> Grid.new()
 
-score = fn grid, x, y, xmax, ymax ->
+xmax = grid.xmax
+ymax = grid.ymax
+
+score = fn grid, x, y ->
   lxs = for xx <- x..0, {xx, y} != {x, y}, do: grid[{xx, y}]
   rxs = for xx <- x..xmax, {xx, y} != {x, y}, do: grid[{xx, y}]
   tys = for yy <- y..0, {x, yy} != {x, y}, do: grid[{x, yy}]
@@ -22,15 +18,14 @@ score = fn grid, x, y, xmax, ymax ->
   Enum.reduce([{lxs, x}, {rxs, xmax - x}, {tys, y}, {bys, ymax - y}], 1, fn {coords, max}, score ->
     coords
     |> Enum.with_index(1)
-    |> Enum.find({target, max}, fn {height, _index} ->
+    |> Enum.find({0, max}, fn {height, _index} ->
       height >= target
     end)
     |> then(fn {_, index} -> index * score end)
   end)
 end
 
-for x <- 1..(xmax-1), y <- 1..(ymax-1) do
-  score.(grid, x, y, xmax, ymax)
+for x <- 1..(xmax-1), y <- 1..(ymax-1), reduce: 0 do
+  candidate -> max(candidate, score.(grid, x, y))
 end
-|> Enum.max()
 |> IO.inspect()
