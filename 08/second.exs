@@ -9,18 +9,16 @@ xmax = grid.xmax
 ymax = grid.ymax
 
 score = fn grid, x, y ->
-  lxs = for xx <- x..0, {xx, y} != {x, y}, do: grid[{xx, y}]
-  rxs = for xx <- x..xmax, {xx, y} != {x, y}, do: grid[{xx, y}]
-  tys = for yy <- y..0, {x, yy} != {x, y}, do: grid[{x, yy}]
-  bys = for yy <- y..ymax, {x, yy} != {x, y}, do: grid[{x, yy}]
+  lxs = x..0 |> Stream.filter(fn xx -> {xx, y} != {x, y} end) |> Stream.map(&(grid[{&1, y}]))
+  rxs = x..xmax |> Stream.filter(fn xx -> {xx, y} != {x, y} end) |> Stream.map(&(grid[{&1, y}]))
+  tys = y..0 |> Stream.filter(fn yy -> {x, yy} != {x, y} end) |> Stream.map(&(grid[{x, &1}]))
+  bys = y..ymax |> Stream.filter(fn yy -> {x, yy} != {x, y} end) |> Stream.map(&(grid[{x, &1}]))
   target = grid[{x, y}]
 
   Enum.reduce([{lxs, x}, {rxs, xmax - x}, {tys, y}, {bys, ymax - y}], 1, fn {coords, max}, score ->
     coords
-    |> Enum.with_index(1)
-    |> Enum.find({0, max}, fn {height, _index} ->
-      height >= target
-    end)
+    |> Stream.with_index(1)
+    |> Enum.find({0, max}, fn {height, _index} -> height >= target end)
     |> then(fn {_, index} -> index * score end)
   end)
 end

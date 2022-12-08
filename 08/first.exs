@@ -10,10 +10,10 @@ hidden = fn grid, x, y ->
   xmax = grid.xmax
   ymax = grid.ymax
 
-  lxs = for xx <- 0..x, {xx, y} != {x, y}, do: grid[{xx, y}]
-  rxs = for xx <- x..xmax, {xx, y} != {x, y}, do: grid[{xx, y}]
-  tys = for yy <- 0..y, {x, yy} != {x, y}, do: grid[{x, yy}]
-  bys = for yy <- y..ymax, {x, yy} != {x, y}, do: grid[{x, yy}]
+  lxs = 0..x |> Stream.filter(fn xx -> {xx, y} != {x, y} end) |> Stream.map(&(grid[{&1, y}]))
+  rxs = x..xmax |> Stream.filter(fn xx -> {xx, y} != {x, y} end) |> Stream.map(&(grid[{&1, y}]))
+  tys = 0..y |> Stream.filter(fn yy -> {x, yy} != {x, y} end) |> Stream.map(&(grid[{x, &1}]))
+  bys = y..ymax |> Stream.filter(fn yy -> {x, yy} != {x, y} end) |> Stream.map(&(grid[{x, &1}]))
 
   Enum.any?(lxs, &(&1 >= height)) &&
     Enum.any?(rxs, &(&1 >= height)) &&
