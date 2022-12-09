@@ -1,13 +1,14 @@
 defmodule RopeThisWorks do
   if "-d" in System.argv do
-    def render(%{h: {hx, hy}, t: tpos} = state) do
+    def render(%{h: {hx, hy}, t: tpos, thistory: th} = state) do
       IO.ANSI.clear() |> IO.puts()
 
       t = tpos |> Enum.with_index() |> Enum.into(%{}, fn {pos, idx} -> {pos, idx + 1} end)
       for y <- 15..-5, x <- -11..14 do
-        chr = case {x, y} do
-          {^hx, ^hy} -> "H"
-          {x, y} when is_map_key(t, {x, y}) -> t[{x, y}]
+        chr = case {{x, y}, MapSet.member?(th, {x, y})} do
+          {_, true} -> "#"
+          {{^hx, ^hy}, _} -> "H"
+          {{x, y}, _} when is_map_key(t, {x, y}) -> t[{x, y}]
           _ -> "."
         end
 
