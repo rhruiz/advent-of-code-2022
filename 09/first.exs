@@ -1,0 +1,92 @@
+defmodule RopeThisWorks do
+  if "-d" in System.argv do
+    def render(%{h: {hx, hy}, t: {tx, ty}} = state) do
+      for y <- 4..0, x <- 0..5 do
+        chr = case {x, y} do
+          {^hx, ^hy} -> "H"
+          {^tx, ^ty} -> "T"
+          _ -> "."
+        end
+
+          IO.write(:stdio, chr)
+          if(x == 5, do: IO.write(:stdio, "\n"))
+      end
+
+      state |> IO.inspect()
+    end
+  else
+    def render(state), do: state
+  end
+
+  def run(stream) do
+    state = %{h: {0, 0}, t: {0, 0}, thistory: MapSet.new([{0, 0}])}
+
+    stream
+    |> Stream.map(&parse/1)
+    |> Enum.reduce(state, &move/2)
+    |> Map.get(:thistory)
+    |> MapSet.size()
+    |> IO.inspect()
+  end
+
+  defp parse(<<dir, " ", amount::binary>>) do
+    {String.to_integer(amount), delta(dir)}
+  end
+
+  defp delta(dir) do
+    case dir do
+      ?R -> {1, 0}
+      ?L -> {-1, 0}
+      ?U -> {0, 1}
+      ?D -> {0, -1}
+    end
+  end
+
+  defp tdelta({hx, hy}, {tx, ty}) when abs(hx - tx) <= 1 and abs(hy - ty) <= 1 do
+    {0, 0}
+  end
+
+  defp tdelta({hx, y}, {tx, y}) when abs(hx - tx) <= 2 do
+    {Integer.floor_div(hx - tx, 2), 0}
+  end
+
+  defp tdelta({x, hy}, {x, ty}) when abs(hy - ty) <= 2 do
+    {0, Integer.floor_div(hy - ty, 2)}
+  end
+
+  defp tdelta({hx, hy}, {tx, ty}) do
+    for dx <- -1..1, dy <- -1..1, dx != 0, dy != 0 do
+      {dx, dy}
+    end
+    |> Enum.find(fn delta ->
+      {tx, ty} = apply_delta({tx, ty}, delta)
+
+      abs(hx - tx) <= 1 && abs(hy - ty) <= 1
+    end)
+  end
+
+  defp apply_delta({x, y}, {dx, dy}) do
+    {x + dx, y + dy}
+  end
+
+  defp move({amount, delta}, state) do
+    do_move(amount, delta, state)
+  end
+
+  defp do_move(0, _delta, state), do: render(state)
+
+  defp do_move(amount, delta, state) do
+    render(state)
+    h = apply_delta(state.h, delta)
+    t = apply_delta(state.t, tdelta(h, state.t))
+    thistory = MapSet.put(state.thistory, t)
+    state = %{state | h: h, t: t, thistory: thistory}
+
+    do_move(amount - 1, delta, state)
+  end
+end
+
+:stdio
+|> IO.stream(:line)
+|> Stream.map(&String.trim/1)
+|> RopeThisWorks.run()
