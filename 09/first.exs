@@ -22,15 +22,15 @@ defmodule RopeThisWorks do
     state = %{h: {0, 0}, t: {0, 0}, thistory: MapSet.new([{0, 0}])}
 
     stream
-    |> Stream.map(&parse/1)
-    |> Enum.reduce(state, &move/2)
+    |> Stream.flat_map(&parse/1)
+    |> Enum.reduce(render(state), &move/2)
     |> Map.get(:thistory)
     |> MapSet.size()
     |> IO.inspect()
   end
 
   defp parse(<<dir, " ", amount::binary>>) do
-    {String.to_integer(amount), delta(dir)}
+    List.duplicate(delta(dir), String.to_integer(amount))
   end
 
   defp delta(dir) do
@@ -69,20 +69,12 @@ defmodule RopeThisWorks do
     {x + dx, y + dy}
   end
 
-  defp move({amount, delta}, state) do
-    do_move(amount, delta, state)
-  end
-
-  defp do_move(0, _delta, state), do: render(state)
-
-  defp do_move(amount, delta, state) do
-    render(state)
+  defp move(delta, state) do
     h = apply_delta(state.h, delta)
     t = apply_delta(state.t, tdelta(h, state.t))
     thistory = MapSet.put(state.thistory, t)
-    state = %{state | h: h, t: t, thistory: thistory}
 
-    do_move(amount - 1, delta, state)
+    render(%{state | h: h, t: t, thistory: thistory})
   end
 end
 
