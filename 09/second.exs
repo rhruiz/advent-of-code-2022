@@ -1,15 +1,16 @@
 defmodule RopeThisWorks do
   if "-d" in System.argv do
-    def render(%{h: {hx, hy}, t: {tx, ty}} = state) do
-      for y <- 4..0, x <- 0..5 do
+    def render(%{h: {hx, hy}, t: tpos} = state) do
+      t = tpos |> Enum.with_index() |> Enum.into(%{}, fn {pos, idx} -> {pos, idx + 1} end)
+      for y <- 15..-5, x <- -11..14 do
         chr = case {x, y} do
           {^hx, ^hy} -> "H"
-          {^tx, ^ty} -> "T"
+          {x, y} when is_map_key(t, {x, y}) -> t[{x, y}]
           _ -> "."
         end
 
         IO.write(:stdio, chr)
-        if(x == 5, do: IO.write(:stdio, "\n"))
+        if(x == 14, do: IO.write(:stdio, "\n"))
       end
 
       state |> IO.inspect()
@@ -19,7 +20,7 @@ defmodule RopeThisWorks do
   end
 
   def run(stream) do
-    state = %{h: {0, 0}, t: {0, 0}, thistory: MapSet.new([{0, 0}])}
+    state = %{h: {0, 0}, t: List.duplicate({0, 0}, 9), thistory: MapSet.new([{0, 0}])}
 
     stream
     |> Stream.flat_map(&parse/1)
@@ -71,10 +72,19 @@ defmodule RopeThisWorks do
 
   defp move(delta, state) do
     h = apply_delta(state.h, delta)
-    t = apply_delta(state.t, tdelta(h, state.t))
-    thistory = MapSet.put(state.thistory, t)
 
-    render(%{state | h: h, t: t, thistory: thistory})
+    move(h, %{state | h: h}, state.t, []) |> render()
+  end
+
+  defp move(_target, state, [], acc) do
+    %{state | t: Enum.reverse(acc), thistory: MapSet.put(state.thistory, hd(acc))}
+  end
+
+  defp move(target, state, [head | tail], acc) do
+    tdelta = tdelta(target, head)
+    target = apply_delta(head, tdelta)
+
+    move(target, state, tail, [target | acc])
   end
 end
 
