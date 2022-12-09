@@ -1,6 +1,8 @@
 defmodule RopeThisWorks do
   if "-d" in System.argv do
     def render(%{h: {hx, hy}, t: tpos} = state) do
+      IO.ANSI.clear() |> IO.puts()
+
       t = tpos |> Enum.with_index() |> Enum.into(%{}, fn {pos, idx} -> {pos, idx + 1} end)
       for y <- 15..-5, x <- -11..14 do
         chr = case {x, y} do
@@ -13,7 +15,9 @@ defmodule RopeThisWorks do
         if(x == 14, do: IO.write(:stdio, "\n"))
       end
 
-      state |> IO.inspect()
+      Process.sleep(50)
+
+      state
     end
   else
     def render(state), do: state
