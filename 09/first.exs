@@ -1,18 +1,23 @@
 defmodule RopeThisWorks do
   if "-d" in System.argv do
-    def render(%{h: {hx, hy}, t: {tx, ty}} = state) do
-      for y <- 4..0, x <- 0..5 do
-        chr = case {x, y} do
-          {^hx, ^hy} -> "H"
-          {^tx, ^ty} -> "T"
+    def render(%{h: {hx, hy}, t: {tx, ty}, thistory: th} = state) do
+      IO.ANSI.clear() |> IO.puts()
+
+      for y <- 12..-12, x <- -40..40 do
+        chr = case {{x, y}, MapSet.member?(th, {x, y})} do
+          {{^hx, ^hy}, _} -> "H"
+          {{^tx, ^ty}, _} -> "T"
+          {_, true} -> "#"
           _ -> "."
         end
 
         IO.write(:stdio, chr)
-        if(x == 5, do: IO.write(:stdio, "\n"))
+        if(x == 40, do: IO.write(:stdio, "\n"))
       end
 
-      state |> IO.inspect()
+      Process.sleep(50)
+
+      state
     end
   else
     def render(state), do: state
