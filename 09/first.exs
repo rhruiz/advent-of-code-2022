@@ -60,14 +60,7 @@ defmodule RopeThisWorks do
   end
 
   defp tdelta({hx, hy}, {tx, ty}) do
-    for dx <- -1..1, dy <- -1..1, dx != 0, dy != 0 do
-      {dx, dy}
-    end
-    |> Enum.find(fn delta ->
-      {tx, ty} = apply_delta({tx, ty}, delta)
-
-      abs(hx - tx) <= 1 && abs(hy - ty) <= 1
-    end)
+    {Integer.floor_div(abs(hx - tx), hx - tx), Integer.floor_div(abs(hy - ty), hy - ty)}
   end
 
   defp apply_delta({x, y}, {dx, dy}) do
