@@ -15,19 +15,20 @@ defmodule Asm do
 end
 
 defmodule Display do
+  @colmax 39
+
   def run(stream) do
-    Stream.transform(stream, 0, fn {_clock, x}, position ->
-      eol = if(position == 39, do: ['\n'], else: [])
+    # {drawing position, line buffer}
+    state = {0, []}
 
-      chr = if position >= x - 1 && position <= x + 1 do
-        '#'
-      else
-        '.'
-      end
-
-      {[chr | eol], Integer.mod(position + 1, 40)}
+    Stream.transform(stream, state, fn {_clock, x}, {position, buf} ->
+      chr = if(position >= x - 1 && position <= x + 1, do: '#', else: '.')
+      emit(position, [buf | [chr]])
     end)
   end
+
+  defp emit(@colmax, buf), do: {[buf], {0, []}}
+  defp emit(position, buf), do: {[], {position + 1, buf}}
 end
 
 :stdio
@@ -36,5 +37,5 @@ end
 |> Stream.concat(["noop"])
 |> Asm.run()
 |> Display.run()
-|> Stream.each(&IO.write/1)
+|> Stream.each(&IO.puts/1)
 |> Stream.run()
