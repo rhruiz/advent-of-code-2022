@@ -40,12 +40,22 @@ defmodule MonkeyBusiness do
     |> then(fn %{monkeys: monkeys, curr: curr} = state ->
       %{state | monkeys: Map.put(monkeys, curr.id, curr)}
     end)
-    |> Map.get(:monkeys)
+    |> then(fn %{monkeys: monkeys} ->
+      common = Enum.reduce(monkeys, 1, fn {_, %{div: div}}, acc -> acc * div end)
+
+      Enum.into(monkeys, %{}, fn {id, monkey} ->
+        {id,
+         Map.update!(monkey, :op, fn op ->
+           fn old ->
+             Integer.mod(op.(old), common)
+           end
+         end)}
+      end)
+    end)
   end
 
   def simulate_rounds(monkeys, n) do
-    1..n
-    |> Enum.reduce(monkeys, fn _, monkeys -> simulate_round(monkeys) end)
+    Enum.reduce(1..n, monkeys, fn _, monkeys -> simulate_round(monkeys) end)
   end
 
   def simulate_round(monkeys) do
@@ -70,7 +80,7 @@ defmodule MonkeyBusiness do
       |> Map.put(:items, queue)
       |> Map.update!(:inspected, &(&1 + 1))
 
-    worry = old |> monkey.op.() |> Integer.floor_div(3)
+    worry = old |> monkey.op.()
     to = monkey.throw[Integer.mod(worry, monkey.div) == 0]
 
     monkeys =
@@ -88,7 +98,7 @@ end
 |> IO.stream(:line)
 |> Stream.map(&String.trim_trailing/1)
 |> MonkeyBusiness.parse()
-|> MonkeyBusiness.simulate_rounds(20)
+|> MonkeyBusiness.simulate_rounds(10_000)
 |> Enum.sort_by(fn {_id, monkey} -> -monkey.inspected end)
 |> Enum.take(2)
 |> Enum.reduce(1, fn {_id, monkey}, mb -> mb * monkey.inspected end)
