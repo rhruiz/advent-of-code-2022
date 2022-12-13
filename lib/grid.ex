@@ -3,7 +3,7 @@ defmodule Grid do
 
   @behaviour Access
 
-  def new(lines) do
+  def new(lines, parser \\ &String.to_integer/1) do
     lines
     |> Stream.map(&String.trim/1)
     |> Stream.with_index()
@@ -12,7 +12,7 @@ defmodule Grid do
       |> String.split("", trim: true)
       |> Enum.with_index()
       |> Enum.reduce(grid, fn {height, x}, grid ->
-        put(grid, {x, y}, String.to_integer(height))
+        put(grid, {x, y}, parser.(height))
       end)
     end)
   end

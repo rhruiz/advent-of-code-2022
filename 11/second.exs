@@ -1,6 +1,6 @@
 defmodule MonkeyBusiness do
   def parse(stream) do
-    state = %{monkeys: %{}, curr: nil}
+    state = %{count: 0, monkeys: %{}, curr: nil}
 
     Enum.reduce(stream, state, fn
       <<"Monkey ", id, ":">>, state ->
@@ -13,7 +13,9 @@ defmodule MonkeyBusiness do
           throw: %{true: 0, false: 0}
         }
 
-        put_in(state.curr, new)
+        state
+        |> Map.put(:curr, new)
+        |> Map.update!(:count, &(&1 + 1))
 
       "  Starting items: " <> items, state ->
         items = items |> String.split(", ") |> Enum.map(&String.to_integer/1)
@@ -40,33 +42,38 @@ defmodule MonkeyBusiness do
     |> then(fn %{monkeys: monkeys, curr: curr} = state ->
       %{state | monkeys: Map.put(monkeys, curr.id, curr)}
     end)
-    |> then(fn %{monkeys: monkeys} ->
+    |> then(fn %{monkeys: monkeys} = state ->
       common = Enum.reduce(monkeys, 1, fn {_, %{div: div}}, acc -> acc * div end)
 
-      Enum.into(monkeys, %{}, fn {id, monkey} ->
-        {id,
-         Map.update!(monkey, :op, fn op ->
-           fn old ->
-             Integer.mod(op.(old), common)
-           end
-         end)}
-      end)
+      Map.put(
+        state,
+        :monkeys,
+        Enum.into(monkeys, %{}, fn {id, monkey} ->
+          {id,
+           Map.update!(monkey, :op, fn op ->
+             fn old ->
+               old |> op.() |> Integer.mod(common)
+             end
+           end)}
+        end)
+      )
     end)
   end
 
-  def simulate_rounds(monkeys, n) do
-    Enum.reduce(1..n, monkeys, fn _, monkeys -> simulate_round(monkeys) end)
+  def simulate_rounds(state, n) do
+    simulate_rounds(state.monkeys, state.count, n)
   end
 
-  def simulate_round(monkeys) do
-    monkeys
-    |> Map.keys()
-    |> Enum.sort()
+  defp simulate_rounds(monkeys, _, 0), do: monkeys
+
+  defp simulate_rounds(monkeys, count, round) do
+    0..(count - 1)
     |> Enum.reduce(monkeys, fn id, monkeys ->
       monkey = monkeys[id]
 
       simulate_monkey(monkey, monkeys, :queue.out(monkey.items))
     end)
+    |> simulate_rounds(count, round - 1)
   end
 
   defp simulate_monkey(monkey, monkeys, {:empty, queue}) do
@@ -80,15 +87,13 @@ defmodule MonkeyBusiness do
       |> Map.put(:items, queue)
       |> Map.update!(:inspected, &(&1 + 1))
 
-    worry = old |> monkey.op.()
+    worry = monkey.op.(old)
     to = monkey.throw[Integer.mod(worry, monkey.div) == 0]
 
     monkeys =
       monkeys
       |> Map.put(monkey.id, monkey)
-      |> update_in([to, :items], fn queue ->
-        :queue.in(worry, queue)
-      end)
+      |> update_in([to, :items], fn queue -> :queue.in(worry, queue) end)
 
     simulate_monkey(monkey, monkeys, :queue.out(queue))
   end
@@ -100,6 +105,5 @@ end
 |> MonkeyBusiness.parse()
 |> MonkeyBusiness.simulate_rounds(10_000)
 |> Enum.sort_by(fn {_id, monkey} -> -monkey.inspected end)
-|> Enum.take(2)
-|> Enum.reduce(1, fn {_id, monkey}, mb -> mb * monkey.inspected end)
+|> then(fn [{_, a}, {_, b} | _tail] -> a.inspected * b.inspected end)
 |> IO.inspect(charlists: :as_lists)

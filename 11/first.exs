@@ -40,12 +40,20 @@ defmodule MonkeyBusiness do
     |> then(fn %{monkeys: monkeys, curr: curr} = state ->
       %{state | monkeys: Map.put(monkeys, curr.id, curr)}
     end)
-    |> Map.get(:monkeys)
+    |> then(fn %{monkeys: monkeys} ->
+      Enum.into(monkeys, %{}, fn {id, monkey} ->
+        {id,
+         Map.update!(monkey, :op, fn op ->
+           fn old ->
+             old |> op.() |> Integer.floor_div(3)
+           end
+         end)}
+      end)
+    end)
   end
 
   def simulate_rounds(monkeys, n) do
-    1..n
-    |> Enum.reduce(monkeys, fn _, monkeys -> simulate_round(monkeys) end)
+    Enum.reduce(1..n, monkeys, fn _, monkeys -> simulate_round(monkeys) end)
   end
 
   def simulate_round(monkeys) do
@@ -70,15 +78,13 @@ defmodule MonkeyBusiness do
       |> Map.put(:items, queue)
       |> Map.update!(:inspected, &(&1 + 1))
 
-    worry = old |> monkey.op.() |> Integer.floor_div(3)
+    worry = monkey.op.(old)
     to = monkey.throw[Integer.mod(worry, monkey.div) == 0]
 
     monkeys =
       monkeys
       |> Map.put(monkey.id, monkey)
-      |> update_in([to, :items], fn queue ->
-        :queue.in(worry, queue)
-      end)
+      |> update_in([to, :items], fn queue -> :queue.in(worry, queue) end)
 
     simulate_monkey(monkey, monkeys, :queue.out(queue))
   end
