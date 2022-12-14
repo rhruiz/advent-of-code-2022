@@ -38,10 +38,10 @@ defmodule SandTetris do
       {nil, _, _} ->
         move(grid, {x, y + 1}, rounds)
 
-      {chr, nil, _} when chr != nil ->
+      {_chr, nil, _} ->
         move(grid, {x - 1, y + 1}, rounds)
 
-      {_, chr, nil} when chr != nil ->
+      {_, _chr, nil} ->
         move(grid, {x + 1, y + 1}, rounds)
 
       _ ->
