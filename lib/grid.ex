@@ -1,5 +1,5 @@
 defmodule Grid do
-  defstruct xmax: 0, ymax: 0, map: %{}
+  defstruct xmin: nil, ymin: nil, xmax: 0, ymax: 0, map: %{}
 
   @behaviour Access
 
@@ -21,6 +21,8 @@ defmodule Grid do
     %{
       grid
       | map: Map.put(grid.map, {x, y}, value),
+        xmin: min(x, grid.xmin),
+        ymin: min(y, grid.ymin),
         xmax: max(x, grid.xmax),
         ymax: max(y, grid.ymax)
     }
