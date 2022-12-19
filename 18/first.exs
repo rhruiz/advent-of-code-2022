@@ -25,8 +25,11 @@ defmodule Cubes do
     for {dx, dy, dz} <- @deltas,
         {x + dx, y + dy, z + dz} in cubes,
         reduce: 0 do
-      count -> count + 1
+      count ->
+          IO.inspect({dx, dy, dz})
+          count + 1
     end
+    |> IO.inspect(label: inspect({x, y, z}))
   end
 end
 
