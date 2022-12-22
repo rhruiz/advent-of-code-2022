@@ -7,10 +7,7 @@ defmodule Value do
 end
 
 defmodule MonkeyMath do
-  def operation("+", left, right), do: left + right
-  def operation("-", left, right), do: left - right
-  def operation("*", left, right), do: left * right
-  def operation("/", left, right), do: left / right
+  def op(op, left, right), do: apply(Kernel, String.to_atom(op), [left, right])
 
   def rev_op("+", _, result, other), do: result - other
   def rev_op("*", _, result, other), do: result / other
@@ -46,7 +43,7 @@ defmodule MonkeyMath do
   def eval(node) do
     case node do
       %Value{} -> node.value
-      %Operation{} -> operation(node.op, eval(node.left), eval(node.right))
+      %Operation{} -> op(node.op, eval(node.left), eval(node.right))
     end
   end
 

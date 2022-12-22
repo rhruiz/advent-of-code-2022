@@ -1,12 +1,11 @@
 defmodule MonkeyMath do
-  def operation("+", left, right), do: left + right
-  def operation("-", left, right), do: left - right
-  def operation("*", left, right), do: left * right
-  def operation("/", left, right), do: left / right
+  def op(op, left, right), do: apply(Kernel, String.to_atom(op), [left, right])
 
   def parse(stream) do
     Enum.reduce(stream, %{}, fn
-      <<monkey::binary-size(4), ": ", left::binary-size(4), " ", op::binary-size(1), " ", right::binary-size(4)>>, acc ->
+      <<monkey::binary-size(4), ": ", left::binary-size(4), " ", op::binary-size(1), " ",
+        right::binary-size(4)>>,
+      acc ->
         Map.put(acc, monkey, {op, left, right})
 
       <<monkey::binary-size(4), ": ", number::binary>>, acc ->
@@ -18,7 +17,7 @@ defmodule MonkeyMath do
 
   def tree(mon, key) do
     case mon[key] do
-      {op, left, right} -> operation(op, tree(mon, left), tree(mon, right))
+      {op, left, right} -> op(op, tree(mon, left), tree(mon, right))
       number -> number
     end
   end
