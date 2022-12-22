@@ -33,14 +33,12 @@ defmodule MonkeyMath do
     end)
   end
 
-  def contains(node, key) do
-    find(node, key) != nil
-  end
+  def contains(node, key), do: find(node, key) != nil
 
   def find(node, name) do
     case node do
       %{name: ^name} -> node
-      %Operation{left: left, right: right} -> find(left, name) || find(right, name)
+      %Operation{} = op -> find(op.left, name) || find(op.right, name)
       _ -> nil
     end
   end
@@ -57,10 +55,9 @@ defmodule MonkeyMath do
   end
 
   def tree(mon, key, parent, index) do
-    monkey = mon[key]
     index = Map.put(index, key, parent)
 
-    case monkey do
+    case mon[key] do
       {op, left, right} ->
         {left, left_index} = tree(mon, left, key, index)
         {right, right_index} = tree(mon, right, key, index)
@@ -106,7 +103,7 @@ defmodule MonkeyMath do
   end
 
   def guess({root, index}) do
-    {guesswork, known} =
+    {side_with_humn, known} =
       if contains(root.left, "humn") do
         {root.left, root.right}
       else
@@ -116,7 +113,7 @@ defmodule MonkeyMath do
     path = path_to(index, "humn")
     expected = eval(known)
 
-    dig(guesswork, path, expected)
+    dig(side_with_humn, path, expected)
   end
 end
 

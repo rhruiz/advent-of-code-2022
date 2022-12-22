@@ -14,15 +14,11 @@ defmodule MonkeyMath do
     end)
   end
 
-  def tree(monkeys) do
-    tree(monkeys, "root")
-  end
+  def tree(monkeys), do: tree(monkeys, "root")
 
-  def tree(monkeys, key) do
-    monkey = monkeys[key]
-
-    case monkey do
-      {op, left, right} -> operation(op, tree(monkeys, left), tree(monkeys, right))
+  def tree(mon, key) do
+    case mon[key] do
+      {op, left, right} -> operation(op, tree(mon, left), tree(mon, right))
       number -> number
     end
   end
@@ -33,5 +29,4 @@ end
 |> Stream.map(&String.trim/1)
 |> MonkeyMath.parse()
 |> MonkeyMath.tree()
-|> trunc()
 |> IO.inspect()
