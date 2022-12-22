@@ -19,7 +19,7 @@ defmodule MonkeyMath do
   def rev_op("/", :right, result, left), do: left / result
 
   def rev_op("-", :left, result, right), do: result + right
-  def rev_op("-", :right, result, left), do: result - left
+  def rev_op("-", :right, result, left), do: left - result
 
   def parse(stream) do
     Enum.reduce(stream, %{}, fn
@@ -39,22 +39,9 @@ defmodule MonkeyMath do
 
   def find(node, name) do
     case node do
-      %{name: ^name} ->
-        node
-
-      %Operation{left: left, right: right} ->
-        find(left, name) || find(right, name)
-
-      _ ->
-        nil
-    end
-  end
-
-  def expr(node) do
-    case node do
-      %Value{name: "humn"} -> "humn"
-      %Value{} -> node.value
-      %Operation{} -> "((#{expr(node.left)}) #{node.op} (#{expr(node.right)}))"
+      %{name: ^name} -> node
+      %Operation{left: left, right: right} -> find(left, name) || find(right, name)
+      _ -> nil
     end
   end
 
@@ -69,14 +56,14 @@ defmodule MonkeyMath do
     tree(monkeys, "root", nil, %{})
   end
 
-  def tree(monkeys, key, parent, index) do
-    monkey = monkeys[key]
+  def tree(mon, key, parent, index) do
+    monkey = mon[key]
     index = Map.put(index, key, parent)
 
     case monkey do
       {op, left, right} ->
-        {left, left_index} = tree(monkeys, left, key, index)
-        {right, right_index} = tree(monkeys, right, key, index)
+        {left, left_index} = tree(mon, left, key, index)
+        {right, right_index} = tree(mon, right, key, index)
 
         {
           %Operation{
@@ -94,11 +81,13 @@ defmodule MonkeyMath do
     end
   end
 
-  def path_to(_index, "root", acc), do: Enum.reverse(acc)
+  def path_to(index, target), do: path_to(index, target, MapSet.new())
+
+  def path_to(_index, "root", acc), do: acc
 
   def path_to(index, to, acc) do
     curr = index[to]
-    path_to(index, curr, [curr | acc])
+    path_to(index, curr, MapSet.put(acc, curr))
   end
 
   def dig(%{name: "humn"}, _, expected), do: expected
@@ -111,46 +100,23 @@ defmodule MonkeyMath do
         {:left, node.left, node.right}
       end
 
-    known = eval(known)
-    humn_side_value = rev_op(node.op, humn_side, expected, known)
-
-    IO.puts(
-      "#{node.name} is #{expected}, #{humn_side} should be #{humn_side_value}, not #{humn_side} is #{known}"
-    )
+    humn_side_value = rev_op(node.op, humn_side, expected, eval(known))
 
     dig(humn_tree, path_to_humn, humn_side_value)
   end
 
-  def bsearch(fun, low, high) do
-    if high >= low do
-      mid = trunc((high + low)/2)
-      op = fun.(mid)
-      IO.puts "try #{mid} -> #{op}"
-
-      case op do
-        0 -> mid
-        0.0 -> mid
-        op when op < 0 -> bsearch(fun, low, mid - 1)
-        _ -> bsearch(fun, mid + 1, high)
-      end
-    else
-      raise "boom"
-    end
-  end
-
   def guess({root, index}) do
-    {[guesswork], [expected]} = Enum.split_with([root.left, root.right], &contains(&1, "humn"))
+    {guesswork, known} =
+      if contains(root.left, "humn") do
+        {root.left, root.right}
+      else
+        {root.right, root.left}
+      end
 
-    expected = eval(expected)
+    path = path_to(index, "humn")
+    expected = eval(known)
 
-    {fun, _} = Code.eval_string("fn humn -> #{expr(guesswork)} - #{expected} end")
-
-
-    {low, high} = Enum.min_max([0, trunc(fun.(0))])
-
-    IO.inspect({low, high})
-
-    bsearch(fun, low, high)
+    dig(guesswork, path, expected)
   end
 end
 
@@ -160,4 +126,4 @@ end
 |> MonkeyMath.parse()
 |> MonkeyMath.tree()
 |> MonkeyMath.guess()
-|> IO.inspect() # 3379022190351
+|> IO.inspect()
