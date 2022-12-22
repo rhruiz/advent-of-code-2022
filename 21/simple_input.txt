@@ -1,0 +1,5 @@
+root: zzzz + bbbb
+zzzz: 150
+bbbb: humn - aaaa
+humn: 10
+aaaa: 20
