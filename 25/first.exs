@@ -54,7 +54,6 @@ end
 :stdio
 |> IO.stream(:line)
 |> Stream.map(&String.trim/1)
-|> Stream.map(&String.trim/1)
 |> Stream.map(&Snafu.to_integer/1)
 |> Enum.reduce(&Kernel.+/2)
 |> Snafu.from_integer()
