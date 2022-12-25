@@ -1,53 +1,45 @@
 defmodule Snafu do
-  defp digit(chr) do
-    fn
-      ?2 -> 2
-      ?1 -> 1
-      ?0 -> 0
-      ?- -> -1
-      ?= -> -2
-      _ -> raise "boom"
-    end
-    |> apply([chr])
-  end
+  @to_integer %{
+    ?2 => 2,
+    ?1 => 1,
+    ?0 => 0,
+    ?- => -1,
+    ?= => -2
+  }
 
-  defp to_int_digit(int) do
-    fn
-      2 -> ?2
-      1 -> ?1
-      0 -> ?0
-      -1 -> ?-
-      -2 -> ?=
-      _ -> raise "boom"
-    end
-    |> apply([int])
-  end
+  @to_snafu %{
+    2 => ?2,
+    1 => ?1,
+    0 => ?0,
+    -1 => ?-,
+    -2 => ?=
+  }
 
   def to_integer(chrs) do
-    chrs
-    |> to_charlist()
-    |> Enum.reverse()
-    |> Enum.reduce({0, 0}, fn chr, {sum, exp} ->
-      {sum + digit(chr) * Integer.pow(5, exp), exp + 1}
-    end)
-    |> elem(0)
+    to_integer(chrs, 0)
+  end
+
+  defp to_integer(<<>>, acc), do: acc
+
+  defp to_integer(<<digit::size(8), tail::binary>>, acc) do
+    to_integer(tail, @to_integer[digit] + acc * 5)
   end
 
   def from_integer(int) do
     int
     |> from_integer(0, [])
-    |> Enum.map(&to_int_digit/1)
-    |> to_string()
+    |> Enum.map(&@to_snafu[&1])
   end
 
-  def from_integer(0, 0, acc), do: acc
+  defp from_integer(0, 0, acc), do: acc
 
-  def from_integer(0, carry, acc), do: [carry | acc]
+  defp from_integer(0, carry, acc), do: [carry | acc]
 
-  def from_integer(int, carry, acc) do
-    {carry, current} = snafu_digit(rem(int, 5) + carry)
+  defp from_integer(int, carry, acc) do
+    {carry, digit} = snafu_digit(rem(int, 5) + carry)
+    next = div(int, 5)
 
-    from_integer(div(int, 5), carry, [current | acc])
+    from_integer(next, carry, [digit | acc])
   end
 
   defp snafu_digit(int) do
