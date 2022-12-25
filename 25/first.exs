@@ -57,4 +57,4 @@ end
 |> Stream.map(&Snafu.to_integer/1)
 |> Enum.reduce(&Kernel.+/2)
 |> Snafu.from_integer()
-|> IO.inspect()
+|> IO.puts()
